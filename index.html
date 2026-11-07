@@ -5,8 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AUA Steel Fabrication Attendance</title>
 
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
-
   <style>
     * {
       box-sizing: border-box;
@@ -41,14 +39,31 @@
       color: #667085;
     }
 
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    select,
     button {
       width: 100%;
       min-height: 54px;
       padding: 14px;
-      margin-bottom: 16px;
-      border: none;
       border-radius: 11px;
       font-size: 17px;
+    }
+
+    select {
+      margin-bottom: 18px;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+    }
+
+    button {
+      margin-bottom: 16px;
+      border: none;
       color: #ffffff;
       font-weight: bold;
       cursor: pointer;
@@ -81,45 +96,8 @@
       background: #0f766e;
     }
 
-    .signout-button {
-      background: #6b7280;
-      font-size: 14px;
-      min-height: 42px;
-    }
-
     .camera-section {
       margin-top: 18px;
-    }
-
-    .employee-panel {
-      padding: 16px;
-      margin-bottom: 20px;
-      border: 1px solid #dbe3ed;
-      border-radius: 12px;
-      background: #f8fafc;
-    }
-
-    .employee-name {
-      font-size: 18px;
-      font-weight: bold;
-      margin-bottom: 6px;
-    }
-
-    .employee-email {
-      color: #667085;
-      font-size: 14px;
-      overflow-wrap: anywhere;
-    }
-
-    #signInSection {
-      text-align: center;
-      margin: 20px 0;
-    }
-
-    #googleSignIn {
-      display: flex;
-      justify-content: center;
-      margin: 16px 0;
     }
 
     video,
@@ -153,10 +131,6 @@
     .success {
       color: #16823f;
     }
-
-    .hidden {
-      display: none !important;
-    }
   </style>
 </head>
 
@@ -168,92 +142,84 @@
       Management Department Attendance
     </div>
 
-    <div id="signInSection">
-      <p>Please sign in using your registered Google account.</p>
-      <div id="googleSignIn"></div>
-    </div>
+    <label for="employee">Employee Name</label>
 
-    <div id="attendanceSection" class="hidden">
-      <div class="employee-panel">
-        <div class="employee-name" id="employeeName"></div>
-        <div class="employee-email" id="employeeEmail"></div>
-      </div>
+    <select id="employee">
+      <option value="">Select Employee</option>
+      <option value="Arvin Jay Avila">Arvin Jay Avila</option>
+      <option value="Marlouie Espiritu">Marlouie Espiritu</option>
+      <option value="Neil Kerby Santos">Neil Kerby Santos</option>
+      <option value="Luiz Paolo Tenero">Luiz Paolo Tenero</option>
+      <option value="Angelica Avila">Angelica Avila</option>
+      <option value="Pinky Crabajales">Pinky Crabajales</option>
+    </select>
 
-      <button class="time-in" onclick="selectAttendance('Time-In')">
-        TIME-IN
+    <button
+      class="time-in"
+      onclick="selectAttendance('Time-In')"
+    >
+      TIME-IN
+    </button>
+
+    <button
+      class="time-out"
+      onclick="selectAttendance('Time-Out')"
+    >
+      TIME-OUT
+    </button>
+
+    <div class="camera-section">
+      <button
+        class="camera-button"
+        onclick="startCamera()"
+      >
+        OPEN CAMERA
       </button>
 
-      <button class="time-out" onclick="selectAttendance('Time-Out')">
-        TIME-OUT
+      <video id="video" autoplay playsinline muted></video>
+
+      <canvas id="canvas"></canvas>
+
+      <button
+        class="capture-button"
+        id="captureButton"
+        onclick="capturePhoto()"
+        disabled
+      >
+        CAPTURE PHOTO
       </button>
 
-      <div class="camera-section">
-        <button class="camera-button" onclick="startCamera()">
-          OPEN CAMERA
-        </button>
+      <button
+        class="retake-button"
+        id="retakeButton"
+        onclick="retakePhoto()"
+        disabled
+      >
+        RETAKE PHOTO
+      </button>
 
-        <video id="video" autoplay playsinline muted></video>
-
-        <canvas id="canvas"></canvas>
-
-        <button
-          class="capture-button"
-          id="captureButton"
-          onclick="capturePhoto()"
-          disabled
-        >
-          CAPTURE PHOTO
-        </button>
-
-        <button
-          class="retake-button"
-          id="retakeButton"
-          onclick="retakePhoto()"
-          disabled
-        >
-          RETAKE PHOTO
-        </button>
-
-        <button
-          class="submit-button"
-          id="submitButton"
-          onclick="submitAttendance()"
-          disabled
-        >
-          SUBMIT ATTENDANCE
-        </button>
-
-        <button class="signout-button" onclick="signOut()">
-          SIGN OUT
-        </button>
-      </div>
+      <button
+        class="submit-button"
+        id="submitButton"
+        onclick="submitAttendance()"
+        disabled
+      >
+        SUBMIT ATTENDANCE
+      </button>
     </div>
 
     <p id="status" class="status">
-      Sign in with Google to continue.
+      Select your attendance type and capture a photo.
     </p>
   </div>
-
-  <iframe
-    id="loginFrame"
-    name="loginFrame"
-    class="hidden"
-    title="Google account verification"
-  ></iframe>
 
   <script>
     const SCRIPT_URL =
       "https://script.google.com/macros/s/AKfycbzM4GnVgaNLEhCoDNLPL_6KhVaVQyisbh1i_cdGE2p1Nfa4aQD--WdD9nTIcAgat8c8UQ/exec";
 
-    const GOOGLE_CLIENT_ID =
-      "831367787244-n0dp7avehua8ojso9rkjgvsqscojl2e6.apps.googleusercontent.com";
-
     let cameraStream = null;
     let selectedAttendanceType = "";
     let photoCaptured = false;
-    let googleIdToken = "";
-    let employee = null;
-    let submitting = false;
 
     const video = document.getElementById("video");
     const canvas = document.getElementById("canvas");
@@ -261,142 +227,24 @@
     const captureButton = document.getElementById("captureButton");
     const retakeButton = document.getElementById("retakeButton");
     const submitButton = document.getElementById("submitButton");
-    const loginFrame = document.getElementById("loginFrame");
 
     function showStatus(message, type = "") {
       statusMessage.innerText = message;
       statusMessage.className = "status " + type;
     }
 
-    function initializeGoogleSignIn() {
-      if (
-        !window.google ||
-        !google.accounts ||
-        !google.accounts.id
-      ) {
-        setTimeout(initializeGoogleSignIn, 300);
-        return;
-      }
-
-      google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleGoogleCredential,
-        auto_select: false
-      });
-
-      google.accounts.id.renderButton(
-        document.getElementById("googleSignIn"),
-        {
-          theme: "outline",
-          size: "large",
-          text: "signin_with",
-          shape: "rectangular",
-          width: 280
-        }
-      );
-    }
-
-    function handleGoogleCredential(response) {
-      if (!response || !response.credential) {
-        showStatus(
-          "Google sign-in failed. Please try again.",
-          "error"
-        );
-        return;
-      }
-
-      googleIdToken = response.credential;
-
-      showStatus("Verifying your Google account...");
-
-      submitToAppsScript({
-        action: "verifyLogin",
-        idToken: googleIdToken
-      }, "loginFrame");
-    }
-
-    function submitToAppsScript(fields, target) {
-      const form = document.createElement("form");
-
-      form.method = "POST";
-      form.action = SCRIPT_URL;
-      form.target = target;
-
-      Object.keys(fields).forEach(function(key) {
-        const input = document.createElement("input");
-
-        input.type = "hidden";
-        input.name = key;
-        input.value = fields[key];
-
-        form.appendChild(input);
-      });
-
-      document.body.appendChild(form);
-      form.submit();
-      form.remove();
-    }
-
-    window.addEventListener("message", function(event) {
-      if (event.source !== loginFrame.contentWindow) {
-        return;
-      }
-
-      let result;
-
-      try {
-        result = typeof event.data === "string"
-          ? JSON.parse(event.data)
-          : event.data;
-      } catch (error) {
-        showStatus(
-          "Unable to read the verification response. Please try again.",
-          "error"
-        );
-        return;
-      }
-
-      if (!result || !result.success) {
-        googleIdToken = "";
-        employee = null;
-
-        showStatus(
-          result && result.message
-            ? result.message
-            : "Your Google account could not be verified.",
-          "error"
-        );
-
-        return;
-      }
-
-      employee = result.employee;
-
-      document.getElementById("employeeName").innerText =
-        employee.name;
-
-      document.getElementById("employeeEmail").innerText =
-        employee.email;
-
-      document.getElementById("signInSection").classList.add("hidden");
-      document.getElementById("attendanceSection").classList.remove("hidden");
-
-      showStatus(
-        "Signed in successfully. Select TIME-IN or TIME-OUT.",
-        "success"
-      );
-    });
-
     function selectAttendance(type) {
-      if (!googleIdToken || !employee) {
-        showStatus("Please sign in first.", "error");
+      const employee = document.getElementById("employee").value;
+
+      if (!employee) {
+        showStatus("Please select an employee first.", "error");
         return;
       }
 
       selectedAttendanceType = type;
 
       showStatus(
-        employee.name + " selected for " + type +
+        employee + " selected for " + type +
         ". Open the camera and capture a photo."
       );
 
@@ -404,11 +252,6 @@
     }
 
     async function startCamera() {
-      if (!googleIdToken || !employee) {
-        showStatus("Please sign in first.", "error");
-        return;
-      }
-
       showStatus("Requesting camera access...");
 
       try {
@@ -514,43 +357,62 @@
     }
 
     function updateSubmitButton() {
+      const employee = document.getElementById("employee").value;
+
       submitButton.disabled = !(
-        googleIdToken &&
         employee &&
         selectedAttendanceType &&
-        photoCaptured &&
-        !submitting
+        photoCaptured
       );
     }
 
-    function submitAttendance() {
+    async function submitAttendance() {
+      const employee = document.getElementById("employee").value;
+
       if (
-        !googleIdToken ||
         !employee ||
         !selectedAttendanceType ||
-        !photoCaptured ||
-        submitting
+        !photoCaptured
       ) {
         showStatus(
-          "Please sign in, select attendance type, and capture a photo.",
+          "Please select an employee, attendance type, and capture a photo.",
           "error"
         );
         return;
       }
 
-      submitting = true;
-      updateSubmitButton();
+      submitButton.disabled = true;
 
       showStatus("Submitting attendance. Please wait...");
 
       const photo = canvas.toDataURL("image/jpeg", 0.7);
 
-      submitToAppsScript({
-        action: "submitAttendance",
-        idToken: googleIdToken,
+      const form = document.createElement("form");
+
+      form.method = "POST";
+      form.action = SCRIPT_URL;
+      form.target = "_blank";
+
+      const fields = {
+        employeeName: employee,
         attendanceType: selectedAttendanceType,
         photo: photo
-      }, "_blank");
+      };
+
+      Object.keys(fields).forEach(function(key) {
+        const input = document.createElement("input");
+
+        input.type = "hidden";
+        input.name = key;
+        input.value = fields[key];
+
+        form.appendChild(input);
+      });
+
+      document.body.appendChild(form);
+
+      form.submit();
+      form.remove();
 
       showStatus(
         "Attendance submission sent. Check the new tab for the result.",
@@ -558,13 +420,14 @@
       );
 
       if (cameraStream) {
-        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream.getTracks().forEach(function(track) {
+          track.stop();
+        });
       }
 
       cameraStream = null;
       photoCaptured = false;
       selectedAttendanceType = "";
-      submitting = false;
 
       video.srcObject = null;
       video.style.display = "block";
@@ -575,43 +438,24 @@
       submitButton.disabled = true;
     }
 
-    function signOut() {
-      if (cameraStream) {
-        cameraStream.getTracks().forEach(track => track.stop());
-      }
+    document
+      .getElementById("employee")
+      .addEventListener("change", function() {
+        selectedAttendanceType = "";
+        updateSubmitButton();
 
-      cameraStream = null;
-      googleIdToken = "";
-      employee = null;
-      selectedAttendanceType = "";
-      photoCaptured = false;
-      submitting = false;
-
-      video.srcObject = null;
-      video.style.display = "block";
-      canvas.style.display = "none";
-
-      captureButton.disabled = true;
-      retakeButton.disabled = true;
-      submitButton.disabled = true;
-
-      document.getElementById("attendanceSection").classList.add("hidden");
-      document.getElementById("signInSection").classList.remove("hidden");
-
-      showStatus("You have signed out. Sign in again to continue.");
-
-      if (window.google && google.accounts && google.accounts.id) {
-        google.accounts.id.disableAutoSelect();
-      }
-    }
+        showStatus(
+          "Select TIME-IN or TIME-OUT, then open the camera."
+        );
+      });
 
     window.addEventListener("beforeunload", function() {
       if (cameraStream) {
-        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream.getTracks().forEach(function(track) {
+          track.stop();
+        });
       }
     });
-
-    initializeGoogleSignIn();
   </script>
 </body>
 </html>
