@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -20,58 +19,53 @@
     }
 
     .container {
-      max-width: 535px;
+      max-width: 610px;
       margin: 0 auto;
-      padding: 28px;
+      padding: 32px;
       background: #ffffff;
-      border-radius: 20px;
-      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+      border-radius: 22px;
+      box-shadow: 0 4px 22px rgba(0,0,0,.08);
     }
 
     h1 {
       margin: 0;
       text-align: center;
-      font-size: 26px;
+      font-size: 29px;
     }
 
     .subtitle {
-      margin: 8px 0 28px;
+      margin: 9px 0 30px;
       text-align: center;
       color: #667085;
+      font-size: 18px;
     }
 
     label {
       display: block;
-      margin-bottom: 10px;
-      font-size: 18px;
-      font-weight: bold;
-    }
-
-    select,
-    button {
-      width: 100%;
-      min-height: 54px;
-      padding: 14px;
-      border-radius: 11px;
+      margin: 12px 0 8px;
+      font-weight: 600;
       font-size: 17px;
     }
 
-    select {
-      margin-bottom: 18px;
-      border: 1px solid #cbd5e1;
-      background: #ffffff;
-    }
-
-    button {
+    button, select {
+      width: 100%;
+      min-height: 55px;
+      padding: 14px;
       margin-bottom: 16px;
-      border: none;
-      color: #ffffff;
-      font-weight: bold;
+      border: 1px solid #d0d5dd;
+      border-radius: 12px;
+      font-size: 17px;
       cursor: pointer;
     }
 
+    button {
+      border: none;
+      color: white;
+      font-weight: bold;
+    }
+
     button:disabled {
-      opacity: 0.5;
+      opacity: .5;
       cursor: not-allowed;
     }
 
@@ -97,27 +91,27 @@
       background: #0f766e;
     }
 
-    .camera-section {
-      margin-top: 18px;
+    .signout-button {
+      background: #6b7280;
+      font-size: 14px;
+      min-height: 44px;
     }
 
-    video,
-    canvas {
-      display: block;
-      width: 100%;
-      height: 220px;
-      margin-bottom: 16px;
+    .employee-panel {
+      padding: 17px;
+      margin-bottom: 20px;
+      border: 1px solid #dbe3ed;
       border-radius: 12px;
-      background: #111827;
-      object-fit: cover;
+      background: #f8fafc;
     }
 
-    canvas {
-      display: none;
+    .employee-name {
+      font-size: 19px;
+      font-weight: bold;
     }
 
     .status {
-      margin-top: 10px;
+      margin-top: 16px;
       text-align: center;
       color: #667085;
       font-size: 15px;
@@ -132,149 +126,404 @@
     .success {
       color: #16823f;
     }
+
+    .hidden {
+      display: none !important;
+    }
+
+    video, canvas {
+      display: block;
+      width: 100%;
+      height: 250px;
+      margin-bottom: 16px;
+      border-radius: 12px;
+      background: #111827;
+      object-fit: cover;
+    }
+
+    canvas {
+      display: none;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 24px 18px;
+      }
+
+      h1 {
+        font-size: 23px;
+      }
+
+      .subtitle {
+        font-size: 15px;
+      }
+    }
   </style>
 </head>
 
 <body>
+
   <div class="container">
+
     <h1>AUA STEEL FABRICATION</h1>
+    <div class="subtitle">Management Department Attendance</div>
 
-    <div class="subtitle">
-      Management Department Attendance
-    </div>
+    <!-- EMPLOYEE SELECTION -->
+    <section id="employeeSelectSection">
 
-    <label for="employee">Employee Name</label>
+      <label for="employeeSelect">Select your name</label>
 
-    <select id="employee">
-      <option value="">Select Employee</option>
-      <option value="Arvin Jay Avila">Arvin Jay Avila</option>
-      <option value="Marlouie Espiritu">Marlouie Espiritu</option>
-      <option value="Neil Kerby Santos">Neil Kerby Santos</option>
-      <option value="Luiz Paolo Tenero">Luiz Paolo Tenero</option>
-      <option value="Angelica Avila">Angelica Avila</option>
-      <option value="Pinky Crabajales">Pinky Crabajales</option>
-    </select>
-
-    <button
-      class="time-in"
-      onclick="selectAttendance('Time-In')"
-    >
-      TIME-IN
-    </button>
-
-    <button
-      class="time-out"
-      onclick="selectAttendance('Time-Out')"
-    >
-      TIME-OUT
-    </button>
-
-    <div class="camera-section">
-      <button
-        class="camera-button"
-        onclick="startCamera()"
-      >
-        OPEN CAMERA
-      </button>
-
-      <video id="video" autoplay playsinline muted></video>
-
-      <canvas id="canvas"></canvas>
+      <select id="employeeSelect">
+        <option value="">Loading active employees...</option>
+      </select>
 
       <button
-        class="capture-button"
-        id="captureButton"
-        onclick="capturePhoto()"
-        disabled
-      >
-        CAPTURE PHOTO
-      </button>
-
-      <button
-        class="retake-button"
-        id="retakeButton"
-        onclick="retakePhoto()"
-        disabled
-      >
-        RETAKE PHOTO
-      </button>
-
-      <button
+        id="continueButton"
         class="submit-button"
-        id="submitButton"
-        onclick="submitAttendance()"
-        disabled
-      >
-        SUBMIT ATTENDANCE
+        onclick="continueAsEmployee()"
+        disabled>
+        CONTINUE
       </button>
-    </div>
+
+    </section>
+
+    <!-- ATTENDANCE SECTION -->
+    <section id="attendanceSection" class="hidden">
+
+      <div class="employee-panel">
+        <div class="employee-name" id="employeeName"></div>
+      </div>
+
+      <button
+        class="time-in"
+        onclick="selectAttendance('Time-In')">
+        TIME-IN
+      </button>
+
+      <button
+        class="time-out"
+        onclick="selectAttendance('Time-Out')">
+        TIME-OUT
+      </button>
+
+      <div class="camera-section">
+
+        <button
+          class="camera-button"
+          onclick="startCamera()">
+          OPEN CAMERA
+        </button>
+
+        <video id="video" autoplay playsinline muted></video>
+
+        <canvas id="canvas"></canvas>
+
+        <button
+          class="capture-button"
+          id="captureButton"
+          onclick="capturePhoto()"
+          disabled>
+          CAPTURE PHOTO
+        </button>
+
+        <button
+          class="retake-button"
+          id="retakeButton"
+          onclick="retakePhoto()"
+          disabled>
+          RETAKE PHOTO
+        </button>
+
+        <button
+          class="submit-button"
+          id="submitButton"
+          onclick="submitAttendance()"
+          disabled>
+          SUBMIT ATTENDANCE
+        </button>
+
+        <button
+          class="signout-button"
+          onclick="changeEmployee()">
+          CHANGE EMPLOYEE
+        </button>
+
+      </div>
+    </section>
 
     <p id="status" class="status">
-      Select your attendance type and capture a photo.
+      Loading employee list...
     </p>
+
   </div>
 
   <script>
+
+    // GOOGLE APPS SCRIPT WEB APP URL
     const SCRIPT_URL =
       "https://script.google.com/macros/s/AKfycbzM4GnVgaNLEhCoDNLPL_6KhVaVQyisbh1i_cdGE2p1Nfa4aQD--WdD9nTIcAgat8c8UQ/exec";
 
     let cameraStream = null;
     let selectedAttendanceType = "";
     let photoCaptured = false;
+    let employee = null;
+    let submitting = false;
+    let employees = [];
 
     const video = document.getElementById("video");
     const canvas = document.getElementById("canvas");
-    const statusMessage = document.getElementById("status");
-    const captureButton = document.getElementById("captureButton");
-    const retakeButton = document.getElementById("retakeButton");
-    const submitButton = document.getElementById("submitButton");
 
+    const statusMessage = document.getElementById("status");
+
+    const captureButton =
+      document.getElementById("captureButton");
+
+    const retakeButton =
+      document.getElementById("retakeButton");
+
+    const submitButton =
+      document.getElementById("submitButton");
+
+    const employeeSelect =
+      document.getElementById("employeeSelect");
+
+    const continueButton =
+      document.getElementById("continueButton");
+
+
+    // DISPLAY STATUS MESSAGE
     function showStatus(message, type = "") {
       statusMessage.innerText = message;
       statusMessage.className = "status " + type;
     }
 
+
+    // LOAD ACTIVE EMPLOYEES USING JSONP
+    function loadEmployees() {
+
+      showStatus("Loading employee list...");
+
+      const callbackName = "handleEmployeeResponse";
+
+      window[callbackName] = function(data) {
+
+        const script = document.getElementById(
+          "employeeListScript"
+        );
+
+        if (script) {
+          script.remove();
+        }
+
+        delete window[callbackName];
+
+        if (!data || !data.success) {
+
+          employeeSelect.innerHTML =
+            '<option value="">Employee list unavailable</option>';
+
+          continueButton.disabled = true;
+
+          showStatus(
+            data && data.message
+              ? data.message
+              : "Unable to load employee list.",
+            "error"
+          );
+
+          return;
+        }
+
+        employees = Array.isArray(data.employees)
+          ? data.employees
+          : [];
+
+        employeeSelect.innerHTML =
+          '<option value="">Select your name</option>';
+
+        if (employees.length === 0) {
+
+          showStatus(
+            "No active employees found in Employee_Masterlist.",
+            "error"
+          );
+
+          continueButton.disabled = true;
+          return;
+        }
+
+        employees.forEach(function(item) {
+
+          const option = document.createElement("option");
+
+          option.value = item.name;
+          option.textContent = item.name;
+
+          employeeSelect.appendChild(option);
+
+        });
+
+        continueButton.disabled = true;
+
+        showStatus(
+          "Employee list loaded successfully. Select your name.",
+          "success"
+        );
+
+      };
+
+      const script = document.createElement("script");
+
+      script.id = "employeeListScript";
+
+      script.src =
+        SCRIPT_URL +
+        "?action=getEmployees" +
+        "&callback=" + callbackName +
+        "&_=" + Date.now();
+
+      script.onerror = function() {
+
+        script.remove();
+
+        delete window[callbackName];
+
+        employeeSelect.innerHTML =
+          '<option value="">Employee list unavailable</option>';
+
+        continueButton.disabled = true;
+
+        showStatus(
+          "Unable to connect to Apps Script. Check deployment access and URL.",
+          "error"
+        );
+
+      };
+
+      document.body.appendChild(script);
+
+    }
+
+
+    // ENABLE CONTINUE ONLY AFTER NAME SELECTION
+    employeeSelect.addEventListener("change", function() {
+
+      continueButton.disabled = !employeeSelect.value;
+
+    });
+
+
+    // CONTINUE AS SELECTED EMPLOYEE
+    function continueAsEmployee() {
+
+      const chosenName = employeeSelect.value;
+
+      if (!chosenName) {
+
+        showStatus("Please select your name.", "error");
+        return;
+
+      }
+
+      const match = employees.find(function(item) {
+        return item.name === chosenName;
+      });
+
+      if (!match) {
+
+        showStatus(
+          "Employee not found. Please refresh the page.",
+          "error"
+        );
+
+        return;
+
+      }
+
+      employee = match;
+
+      document.getElementById("employeeName").textContent =
+        employee.name;
+
+      document.getElementById("employeeSelectSection")
+        .classList.add("hidden");
+
+      document.getElementById("attendanceSection")
+        .classList.remove("hidden");
+
+      showStatus(
+        "Welcome, " + employee.name +
+        ". Select TIME-IN or TIME-OUT.",
+        "success"
+      );
+
+    }
+
+
+    // SELECT TIME-IN OR TIME-OUT
     function selectAttendance(type) {
-      const employee = document.getElementById("employee").value;
 
       if (!employee) {
-        showStatus("Please select an employee first.", "error");
+
+        showStatus("Please select your name first.", "error");
         return;
+
       }
 
       selectedAttendanceType = type;
 
       showStatus(
-        employee + " selected for " + type +
+        employee.name + " selected for " + type +
         ". Open the camera and capture a photo."
       );
 
       updateSubmitButton();
+
     }
 
+
+    // OPEN CAMERA
     async function startCamera() {
+
+      if (!employee) {
+
+        showStatus("Please select your name first.", "error");
+        return;
+
+      }
+
       showStatus("Requesting camera access...");
 
       try {
+
         if (
           !navigator.mediaDevices ||
           !navigator.mediaDevices.getUserMedia
         ) {
+
           throw new Error(
             "Camera access requires a secure HTTPS page."
           );
+
         }
 
         if (cameraStream) {
-          cameraStream.getTracks().forEach(track => track.stop());
+
+          cameraStream.getTracks().forEach(function(track) {
+            track.stop();
+          });
+
         }
 
         cameraStream = await navigator.mediaDevices.getUserMedia({
+
           video: true,
           audio: false
+
         });
 
         video.srcObject = cameraStream;
+
         await video.play();
 
         captureButton.disabled = false;
@@ -286,25 +535,36 @@
         );
 
       } catch (error) {
+
         showStatus(
           "Camera error: " + error.name + " - " + error.message,
           "error"
         );
+
       }
+
     }
 
+
+    // CAPTURE PHOTO
     function capturePhoto() {
+
       if (!cameraStream) {
+
         showStatus("Please open the camera first.", "error");
         return;
+
       }
 
       if (!video.videoWidth || !video.videoHeight) {
+
         showStatus(
           "Camera is still starting. Please wait.",
           "error"
         );
+
         return;
+
       }
 
       const context = canvas.getContext("2d");
@@ -334,12 +594,18 @@
       );
 
       updateSubmitButton();
+
     }
 
+
+    // RETAKE PHOTO
     function retakePhoto() {
+
       if (!cameraStream) {
+
         showStatus("Please open the camera first.", "error");
         return;
+
       }
 
       photoCaptured = false;
@@ -355,34 +621,44 @@
       showStatus(
         "Camera is ready. Capture your photo again."
       );
+
     }
 
+
+    // UPDATE SUBMIT BUTTON
     function updateSubmitButton() {
-      const employee = document.getElementById("employee").value;
 
       submitButton.disabled = !(
         employee &&
         selectedAttendanceType &&
-        photoCaptured
+        photoCaptured &&
+        !submitting
       );
+
     }
 
-    async function submitAttendance() {
-      const employee = document.getElementById("employee").value;
+
+    // SUBMIT ATTENDANCE
+    function submitAttendance() {
 
       if (
         !employee ||
         !selectedAttendanceType ||
-        !photoCaptured
+        !photoCaptured ||
+        submitting
       ) {
+
         showStatus(
-          "Please select an employee, attendance type, and capture a photo.",
+          "Please select your name, attendance type, and capture a photo.",
           "error"
         );
+
         return;
+
       }
 
-      submitButton.disabled = true;
+      submitting = true;
+      updateSubmitButton();
 
       showStatus("Submitting attendance. Please wait...");
 
@@ -395,12 +671,16 @@
       form.target = "_blank";
 
       const fields = {
-        employeeName: employee,
+
+        action: "submitAttendance",
+        employeeName: employee.name,
         attendanceType: selectedAttendanceType,
         photo: photo
+
       };
 
       Object.keys(fields).forEach(function(key) {
+
         const input = document.createElement("input");
 
         input.type = "hidden";
@@ -408,11 +688,13 @@
         input.value = fields[key];
 
         form.appendChild(input);
+
       });
 
       document.body.appendChild(form);
 
       form.submit();
+
       form.remove();
 
       showStatus(
@@ -421,42 +703,88 @@
       );
 
       if (cameraStream) {
+
         cameraStream.getTracks().forEach(function(track) {
           track.stop();
         });
+
       }
 
       cameraStream = null;
       photoCaptured = false;
       selectedAttendanceType = "";
+      submitting = false;
 
       video.srcObject = null;
+
       video.style.display = "block";
       canvas.style.display = "none";
 
       captureButton.disabled = true;
       retakeButton.disabled = true;
       submitButton.disabled = true;
+
     }
 
-    document
-      .getElementById("employee")
-      .addEventListener("change", function() {
-        selectedAttendanceType = "";
-        updateSubmitButton();
 
-        showStatus(
-          "Select TIME-IN or TIME-OUT, then open the camera."
-        );
-      });
+    // CHANGE EMPLOYEE
+    function changeEmployee() {
 
-    window.addEventListener("beforeunload", function() {
       if (cameraStream) {
+
         cameraStream.getTracks().forEach(function(track) {
           track.stop();
         });
+
       }
+
+      cameraStream = null;
+      employee = null;
+      selectedAttendanceType = "";
+      photoCaptured = false;
+      submitting = false;
+
+      video.srcObject = null;
+
+      video.style.display = "block";
+      canvas.style.display = "none";
+
+      captureButton.disabled = true;
+      retakeButton.disabled = true;
+      submitButton.disabled = true;
+
+      employeeSelect.value = "";
+      continueButton.disabled = true;
+
+      document.getElementById("attendanceSection")
+        .classList.add("hidden");
+
+      document.getElementById("employeeSelectSection")
+        .classList.remove("hidden");
+
+      showStatus("Choose your name to continue.");
+
+    }
+
+
+    // STOP CAMERA WHEN PAGE IS CLOSED
+    window.addEventListener("beforeunload", function() {
+
+      if (cameraStream) {
+
+        cameraStream.getTracks().forEach(function(track) {
+          track.stop();
+        });
+
+      }
+
     });
+
+
+    // INITIALIZE PAGE
+    loadEmployees();
+
   </script>
+
 </body>
 </html>
