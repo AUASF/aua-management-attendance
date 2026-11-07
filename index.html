@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -39,13 +40,6 @@
       margin: 8px 0 28px;
       text-align: center;
       color: #667085;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 10px;
-      font-size: 18px;
-      font-weight: bold;
     }
 
     button {
@@ -186,25 +180,16 @@
         <div class="employee-email" id="employeeEmail"></div>
       </div>
 
-      <button
-        class="time-in"
-        onclick="selectAttendance('Time-In')"
-      >
+      <button class="time-in" onclick="selectAttendance('Time-In')">
         TIME-IN
       </button>
 
-      <button
-        class="time-out"
-        onclick="selectAttendance('Time-Out')"
-      >
+      <button class="time-out" onclick="selectAttendance('Time-Out')">
         TIME-OUT
       </button>
 
       <div class="camera-section">
-        <button
-          class="camera-button"
-          onclick="startCamera()"
-        >
+        <button class="camera-button" onclick="startCamera()">
           OPEN CAMERA
         </button>
 
@@ -239,10 +224,7 @@
           SUBMIT ATTENDANCE
         </button>
 
-        <button
-          class="signout-button"
-          onclick="signOut()"
-        >
+        <button class="signout-button" onclick="signOut()">
           SIGN OUT
         </button>
       </div>
@@ -253,9 +235,16 @@
     </p>
   </div>
 
+  <iframe
+    id="loginFrame"
+    name="loginFrame"
+    class="hidden"
+    title="Google login verification"
+  ></iframe>
+
   <script>
     const SCRIPT_URL =
-      "https://script.google.com/macros/s/AKfycbz7D3JtpvwlH9kg4FxuImFPAEB6tgUQhKQpaRFNTrUJtG4FP9oJnevBvGqIXZRogalA5Q/exec";
+      "https://script.google.com/macros/s/AKfycbzM4GnVgaNLEhCoDNLPL_6KhVaVQyisbh1i_cdGE2p1Nfa4aQD--WdD9nTIcAgat8c8UQ/exec";
 
     const GOOGLE_CLIENT_ID =
       "831367787244-n0dp7avehua8ojso9rkjgvsqscojl2e6.apps.googleusercontent.com";
@@ -303,7 +292,7 @@
       );
     }
 
-    async function handleGoogleCredential(response) {
+    function handleGoogleCredential(response) {
       if (!response || !response.credential) {
         showStatus("Google sign-in failed. Please try again.", "error");
         return;
@@ -313,51 +302,77 @@
 
       showStatus("Verifying your Google account...");
 
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = SCRIPT_URL;
+      form.target = "loginFrame";
+
+      const fields = {
+        action: "verifyLogin",
+        idToken: googleIdToken
+      };
+
+      Object.keys(fields).forEach(function(key) {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = key;
+        input.value = fields[key];
+        form.appendChild(input);
+      });
+
+      document.body.appendChild(form);
+      form.submit();
+      form.remove();
+    }
+
+    window.addEventListener("message", function(event) {
+      if (
+        event.source !==
+        document.getElementById("loginFrame").contentWindow
+      ) {
+        return;
+      }
+
+      let result;
+
       try {
-        const form = new URLSearchParams();
-        form.append("action", "verifyLogin");
-        form.append("idToken", googleIdToken);
-
-        const responseData = await fetch(SCRIPT_URL, {
-          method: "POST",
-          body: form
-        });
-
-        const result = await responseData.json();
-
-        if (!result.success) {
-          googleIdToken = "";
-          showStatus(
-            result.message || "Your account is not authorized.",
-            "error"
-          );
-          return;
-        }
-
-        employee = result.employee;
-
-        document.getElementById("employeeName").innerText =
-          employee.name;
-
-        document.getElementById("employeeEmail").innerText =
-          employee.email;
-
-        document.getElementById("signInSection").classList.add("hidden");
-        document.getElementById("attendanceSection").classList.remove("hidden");
-
-        showStatus(
-          "Signed in successfully. Select TIME-IN or TIME-OUT.",
-          "success"
-        );
-
+        result = typeof event.data === "string"
+          ? JSON.parse(event.data)
+          : event.data;
       } catch (error) {
+        showStatus("Unable to read the verification response.", "error");
+        return;
+      }
+
+      if (!result || !result.success) {
         googleIdToken = "";
+
         showStatus(
-          "Unable to verify your account. Please try again.",
+          result && result.message
+            ? result.message
+            : "Your Google account could not be verified.",
           "error"
         );
+
+        return;
       }
-    }
+
+      employee = result.employee;
+
+      document.getElementById("employeeName").innerText =
+        employee.name;
+
+      document.getElementById("employeeEmail").innerText =
+        employee.email;
+
+      document.getElementById("signInSection").classList.add("hidden");
+      document.getElementById("attendanceSection").classList.remove("hidden");
+
+      showStatus(
+        "Signed in successfully. Select TIME-IN or TIME-OUT.",
+        "success"
+      );
+    });
 
     function selectAttendance(type) {
       if (!googleIdToken || !employee) {
@@ -495,7 +510,7 @@
       );
     }
 
-    async function submitAttendance() {
+    function submitAttendance() {
       if (
         !googleIdToken ||
         !employee ||
@@ -532,16 +547,13 @@
 
       Object.keys(fields).forEach(function(key) {
         const input = document.createElement("input");
-
         input.type = "hidden";
         input.name = key;
         input.value = fields[key];
-
         form.appendChild(input);
       });
 
       document.body.appendChild(form);
-
       form.submit();
       form.remove();
 
