@@ -1,207 +1,572 @@
-function doGet() {
-  return HtmlService.createHtmlOutputFromFile("index")
-    .setTitle("AUA Steel Fabrication Attendance")
-    .addMetaTag("viewport", "width=device-width, initial-scale=1");
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AUA Steel Fabrication Attendance</title>
 
-function getEmployees() {
-  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = spreadsheet.getSheetByName("Employee_Masterlist");
+  <style>
+    * { box-sizing: border-box; }
 
-  if (!sheet) {
-    throw new Error("Employee_Masterlist sheet was not found.");
-  }
-
-  const data = sheet.getDataRange().getDisplayValues();
-
-  if (data.length < 2) {
-    return [];
-  }
-
-  const headers = data[0].map(header =>
-    String(header).trim().toLowerCase().replace(/\s+/g, " ")
-  );
-
-  const nameColumn = headers.indexOf("employee name");
-  const emailColumn = headers.indexOf("company email");
-  const statusColumn = headers.indexOf("status");
-
-  if (
-    nameColumn === -1 ||
-    emailColumn === -1 ||
-    statusColumn === -1
-  ) {
-    throw new Error(
-      "Required headers: Employee Name, Company Email, Status."
-    );
-  }
-
-  return data.slice(1)
-    .filter(row =>
-      String(row[nameColumn]).trim() !== "" &&
-      String(row[statusColumn]).trim().toLowerCase() === "active"
-    )
-    .map(row => ({
-      name: String(row[nameColumn]).trim(),
-      email: String(row[emailColumn]).trim()
-    }));
-}
-
-function doPost(e) {
-  try {
-    if (!e || !e.parameter) {
-      throw new Error("No attendance submission was received.");
+    body {
+      margin: 0;
+      padding: 24px 12px;
+      font-family: Arial, sans-serif;
+      background: #f1f3f6;
+      color: #1f2937;
     }
 
-    const employeeName = String(
-      e.parameter.employeeName || ""
-    ).trim();
-    Logger.log("Submitted employee name: [" + employeeName + "]");
-    Logger.log("Active masterlist names: " + JSON.stringify(getEmployees()));
+    .container {
+      max-width: 535px;
+      margin: 0 auto;
+      padding: 28px;
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 4px 18px rgba(0,0,0,.08);
+    }
 
-    const attendanceType = String(
-      e.parameter.attendanceType || ""
-    ).trim();
+    h1 {
+      margin: 0;
+      text-align: center;
+      font-size: 26px;
+    }
 
-    const photo = String(e.parameter.photo || "");
+    .subtitle {
+      margin: 8px 0 28px;
+      text-align: center;
+      color: #667085;
+    }
 
-    if (!employeeName || !attendanceType || !photo) {
-      throw new Error(
-        "Employee name, attendance type, and photo are required."
+    button, select {
+      width: 100%;
+      min-height: 54px;
+      padding: 14px;
+      margin-bottom: 16px;
+      border: 1px solid #d0d5dd;
+      border-radius: 11px;
+      font-size: 17px;
+      cursor: pointer;
+    }
+
+    button {
+      border: none;
+      color: #fff;
+      font-weight: bold;
+    }
+
+    button:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    .time-in { background: #16823f; }
+    .time-out { background: #2450df; }
+    .camera-button, .capture-button { background: #374151; }
+    .retake-button { background: #eee; color: #111; }
+    .submit-button { background: #0f766e; }
+
+    .signout-button {
+      background: #6b7280;
+      font-size: 14px;
+      min-height: 42px;
+    }
+
+    .camera-section { margin-top: 18px; }
+
+    .employee-panel {
+      padding: 16px;
+      margin-bottom: 20px;
+      border: 1px solid #dbe3ed;
+      border-radius: 12px;
+      background: #f8fafc;
+    }
+
+    .employee-name {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .status {
+      margin-top: 10px;
+      text-align: center;
+      color: #667085;
+      font-size: 15px;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .error { color: #b42318; }
+    .success { color: #16823f; }
+    .hidden { display: none !important; }
+
+    video, canvas {
+      display: block;
+      width: 100%;
+      height: 220px;
+      margin-bottom: 16px;
+      border-radius: 12px;
+      background: #111827;
+      object-fit: cover;
+    }
+
+    canvas { display: none; }
+
+    label {
+      display: block;
+      text-align: left;
+      margin: 12px 0 6px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+
+    <h1>AUA STEEL FABRICATION</h1>
+    <div class="subtitle">Management Department Attendance</div>
+
+    <!-- EMPLOYEE SELECTION -->
+    <section id="employeeSelectSection">
+
+      <label for="employeeSelect">Select your name</label>
+
+      <select id="employeeSelect">
+        <option value="">Loading active employees...</option>
+      </select>
+
+      <button
+        id="continueButton"
+        class="submit-button"
+        onclick="continueAsEmployee()"
+        disabled>
+        CONTINUE
+      </button>
+
+    </section>
+
+    <!-- ATTENDANCE SECTION -->
+    <section id="attendanceSection" class="hidden">
+
+      <div class="employee-panel">
+        <div class="employee-name" id="employeeName"></div>
+      </div>
+
+      <button
+        class="time-in"
+        onclick="selectAttendance('Time-In')">
+        TIME-IN
+      </button>
+
+      <button
+        class="time-out"
+        onclick="selectAttendance('Time-Out')">
+        TIME-OUT
+      </button>
+
+      <div class="camera-section">
+
+        <button
+          class="camera-button"
+          onclick="startCamera()">
+          OPEN CAMERA
+        </button>
+
+        <video id="video" autoplay playsinline muted></video>
+        <canvas id="canvas"></canvas>
+
+        <button
+          class="capture-button"
+          id="captureButton"
+          onclick="capturePhoto()"
+          disabled>
+          CAPTURE PHOTO
+        </button>
+
+        <button
+          class="retake-button"
+          id="retakeButton"
+          onclick="retakePhoto()"
+          disabled>
+          RETAKE PHOTO
+        </button>
+
+        <button
+          class="submit-button"
+          id="submitButton"
+          onclick="submitAttendance()"
+          disabled>
+          SUBMIT ATTENDANCE
+        </button>
+
+        <button
+          class="signout-button"
+          onclick="changeEmployee()">
+          CHANGE EMPLOYEE
+        </button>
+
+      </div>
+    </section>
+
+    <p id="status" class="status">
+      Choose your name to continue.
+    </p>
+
+  </div>
+
+  <script>
+    const SCRIPT_URL =
+      "https://script.google.com/macros/s/AKfycbzM4GnVgaNLEhCoDNLPL_6KhVaVQyisbh1i_cdGE2p1Nfa4aQD--WdD9nTIcAgat8c8UQ/exec";
+
+    let cameraStream = null;
+    let selectedAttendanceType = "";
+    let photoCaptured = false;
+    let employee = null;
+    let submitting = false;
+
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const statusMessage = document.getElementById("status");
+    const captureButton = document.getElementById("captureButton");
+    const retakeButton = document.getElementById("retakeButton");
+    const submitButton = document.getElementById("submitButton");
+    const employeeSelect = document.getElementById("employeeSelect");
+    const continueButton = document.getElementById("continueButton");
+
+    function showStatus(message, type = "") {
+      statusMessage.innerText = message;
+      statusMessage.className = "status " + type;
+    }
+
+    // LOAD ACTIVE EMPLOYEES
+    function loadEmployees() {
+      fetch(SCRIPT_URL + "?action=getEmployees")
+        .then(response => {
+          if (!response.ok) {
+            throw new Error("Could not load employee list.");
+          }
+
+          return response.json();
+        })
+        .then(data => {
+          if (!data.success) {
+            throw new Error(data.message || "Could not load employees.");
+          }
+
+          employeeSelect.innerHTML =
+            '<option value="">Select your name</option>';
+
+          data.employees.forEach(item => {
+            const option = document.createElement("option");
+            option.value = item.name;
+            option.textContent = item.name;
+            employeeSelect.appendChild(option);
+          });
+
+          continueButton.disabled = false;
+          showStatus("Choose your name to continue.");
+        })
+        .catch(error => {
+          employeeSelect.innerHTML =
+            '<option value="">Employee list unavailable</option>';
+
+          showStatus(
+            error.message + " Please check the Apps Script deployment.",
+            "error"
+          );
+        });
+    }
+
+    employeeSelect.addEventListener("change", function() {
+      continueButton.disabled = !employeeSelect.value;
+    });
+
+    // CONTINUE AS SELECTED EMPLOYEE
+    function continueAsEmployee() {
+      const chosenName = employeeSelect.value;
+
+      if (!chosenName) {
+        showStatus("Please select your name.", "error");
+        return;
+      }
+
+      fetch(SCRIPT_URL + "?action=getEmployees")
+        .then(response => response.json())
+        .then(data => {
+          const match = (data.employees || []).find(
+            item => item.name === chosenName
+          );
+
+          if (!data.success || !match) {
+            throw new Error("Employee is not listed as active.");
+          }
+
+          employee = match;
+
+          document.getElementById("employeeName").textContent =
+            employee.name;
+
+          document.getElementById("employeeSelectSection")
+            .classList.add("hidden");
+
+          document.getElementById("attendanceSection")
+            .classList.remove("hidden");
+
+          showStatus(
+            "Welcome, " + employee.name +
+            ". Select TIME-IN or TIME-OUT.",
+            "success"
+          );
+        })
+        .catch(error => {
+          showStatus(error.message, "error");
+        });
+    }
+
+    // SELECT TIME-IN OR TIME-OUT
+    function selectAttendance(type) {
+      if (!employee) {
+        showStatus("Please select your name first.", "error");
+        return;
+      }
+
+      selectedAttendanceType = type;
+
+      showStatus(
+        employee.name + " selected for " + type +
+        ". Open the camera and capture a photo."
+      );
+
+      updateSubmitButton();
+    }
+
+    // OPEN CAMERA
+    async function startCamera() {
+      if (!employee) {
+        showStatus("Please select your name first.", "error");
+        return;
+      }
+
+      showStatus("Requesting camera access...");
+
+      try {
+        if (
+          !navigator.mediaDevices ||
+          !navigator.mediaDevices.getUserMedia
+        ) {
+          throw new Error(
+            "Camera access requires a secure HTTPS page."
+          );
+        }
+
+        if (cameraStream) {
+          cameraStream.getTracks().forEach(track => track.stop());
+        }
+
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false
+        });
+
+        video.srcObject = cameraStream;
+        await video.play();
+
+        captureButton.disabled = false;
+        retakeButton.disabled = true;
+
+        showStatus("Camera opened. You can capture your photo.", "success");
+
+      } catch (error) {
+        showStatus(
+          "Camera error: " + error.name + " - " + error.message,
+          "error"
+        );
+      }
+    }
+
+    // CAPTURE PHOTO
+    function capturePhoto() {
+      if (!cameraStream) {
+        return showStatus("Please open the camera first.", "error");
+      }
+
+      if (!video.videoWidth || !video.videoHeight) {
+        return showStatus(
+          "Camera is still starting. Please wait.",
+          "error"
+        );
+      }
+
+      const context = canvas.getContext("2d");
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      context.drawImage(
+        video,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
+
+      photoCaptured = true;
+
+      video.style.display = "none";
+      canvas.style.display = "block";
+
+      captureButton.disabled = true;
+      retakeButton.disabled = false;
+
+      showStatus("Photo captured. You can retake it if needed.", "success");
+
+      updateSubmitButton();
+    }
+
+    // RETAKE PHOTO
+    function retakePhoto() {
+      if (!cameraStream) {
+        return showStatus("Please open the camera first.", "error");
+      }
+
+      photoCaptured = false;
+
+      canvas.style.display = "none";
+      video.style.display = "block";
+
+      captureButton.disabled = false;
+      retakeButton.disabled = true;
+
+      updateSubmitButton();
+
+      showStatus("Camera is ready. Capture your photo again.");
+    }
+
+    // ENABLE OR DISABLE SUBMIT BUTTON
+    function updateSubmitButton() {
+      submitButton.disabled = !(
+        employee &&
+        selectedAttendanceType &&
+        photoCaptured &&
+        !submitting
       );
     }
 
-    if (!["Time-In", "Time-Out"].includes(attendanceType)) {
-      throw new Error("Invalid attendance type.");
-    }
+    // SUBMIT ATTENDANCE
+    function submitAttendance() {
+      if (
+        !employee ||
+        !selectedAttendanceType ||
+        !photoCaptured ||
+        submitting
+      ) {
+        showStatus(
+          "Please select your name, attendance type, and capture a photo.",
+          "error"
+        );
+        return;
+      }
 
-    // Retrieve active employees from the masterlist
-    const employees = getEmployees();
+      submitting = true;
+      updateSubmitButton();
 
-    // Normalize names to ignore capitalization and extra spaces
-    const normalizeName = name =>
-      String(name)
-        .normalize("NFKC")
-        .replace(/\s+/g, " ")
-        .trim()
-        .toLowerCase();
+      showStatus("Submitting attendance. Please wait...");
 
-    // Match the submitted employee against the active masterlist
-    const employee = employees.find(item =>
-      normalizeName(item.name) === normalizeName(employeeName)
-    );
+      const photo = canvas.toDataURL("image/jpeg", 0.7);
 
-    if (!employee) {
-      const activeNames = employees.map(item => item.name).join(", ");
+      const form = document.createElement("form");
 
-      throw new Error(
-        "Employee not found or inactive: " +
-        employeeName +
-        ". Active employees: " +
-        activeNames
+      form.method = "POST";
+      form.action = SCRIPT_URL;
+      form.target = "_blank";
+
+      const fields = {
+        action: "submitAttendance",
+        employeeName: employee.name,
+        attendanceType: selectedAttendanceType,
+        photo: photo
+      };
+
+      Object.keys(fields).forEach(key => {
+        const input = document.createElement("input");
+
+        input.type = "hidden";
+        input.name = key;
+        input.value = fields[key];
+
+        form.appendChild(input);
+      });
+
+      document.body.appendChild(form);
+      form.submit();
+      form.remove();
+
+      showStatus(
+        "Attendance submission sent. Check the new tab for the result.",
+        "success"
       );
+
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+
+      cameraStream = null;
+      photoCaptured = false;
+      selectedAttendanceType = "";
+      submitting = false;
+
+      video.srcObject = null;
+      video.style.display = "block";
+      canvas.style.display = "none";
+
+      captureButton.disabled = true;
+      retakeButton.disabled = true;
+      submitButton.disabled = true;
     }
 
-    if (
-      !employee.email ||
-      employee.email.toLowerCase() === "pending"
-    ) {
-      throw new Error(
-        "The employee's company email is missing."
-      );
+    // CHANGE EMPLOYEE
+    function changeEmployee() {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+
+      cameraStream = null;
+      employee = null;
+      selectedAttendanceType = "";
+      photoCaptured = false;
+      submitting = false;
+
+      video.srcObject = null;
+      video.style.display = "block";
+      canvas.style.display = "none";
+
+      captureButton.disabled = true;
+      retakeButton.disabled = true;
+      submitButton.disabled = true;
+
+      employeeSelect.value = "";
+      continueButton.disabled = true;
+
+      document.getElementById("attendanceSection")
+        .classList.add("hidden");
+
+      document.getElementById("employeeSelectSection")
+        .classList.remove("hidden");
+
+      showStatus("Choose your name to continue.");
     }
 
-    // Validate and decode the captured photo
-    const photoParts = photo.split(",");
+    // STOP CAMERA WHEN PAGE IS CLOSED
+    window.addEventListener("beforeunload", function() {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+    });
 
-    if (photoParts.length < 2) {
-      throw new Error("Invalid photo data.");
-    }
+    // INITIALIZE
+    loadEmployees();
 
-    const photoBlob = Utilities.newBlob(
-      Utilities.base64Decode(photoParts[1]),
-      "image/jpeg",
-      employee.name.replace(/[^\w\s-]/g, "") +
-        "_" +
-        attendanceType +
-        "_" +
-        new Date().getTime() +
-        ".jpg"
-    );
-
-    // Find or create the attendance photo folder
-    const folderName = "AUA Attendance Photos";
-    const folders = DriveApp.getFoldersByName(folderName);
-
-    const folder = folders.hasNext()
-      ? folders.next()
-      : DriveApp.createFolder(folderName);
-
-    // Save the attendance photo
-    const photoFile = folder.createFile(photoBlob);
-    const photoUrl = photoFile.getUrl();
-
-    // Get the attendance spreadsheet
-    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-
-    const attendanceSheet =
-      spreadsheet.getSheetByName("Attendance_Log");
-
-    if (!attendanceSheet) {
-      throw new Error(
-        "Attendance_Log sheet was not found."
-      );
-    }
-
-    // Get the current date and time
-    const now = new Date();
-    const timezone = Session.getScriptTimeZone();
-
-    const attendanceDate = Utilities.formatDate(
-      now,
-      timezone,
-      "yyyy-MM-dd"
-    );
-
-    // Append the attendance record
-    attendanceSheet.appendRow([
-      now,
-      employee.name,
-      employee.email,
-      attendanceType,
-      attendanceDate,
-      photoUrl,
-      "Pending Verification",
-      ""
-    ]);
-
-    return HtmlService.createHtmlOutput(
-      "<h2>Attendance recorded successfully.</h2>" +
-      "<p>Your attendance has been submitted.</p>" +
-      "<p>You may close this tab and return to the attendance page.</p>"
-    );
-
-  } catch (error) {
-    return HtmlService.createHtmlOutput(
-      "<h2>Attendance submission failed.</h2>" +
-      "<p>" + error.message + "</p>"
-    );
-  }
-}
-
-function testAngelica() {
-  const employees = getEmployees();
-
-  const normalizeName = name =>
-    String(name)
-      .normalize("NFKC")
-      .replace(/\s+/g, " ")
-      .trim()
-      .toLowerCase();
-
-  const angelica = employees.find(item =>
-    normalizeName(item.name) === normalizeName("Angelica Avila")
-  );
-
-  Logger.log(JSON.stringify(angelica));
-}
+  </script>
+</body>
+</html>
