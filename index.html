@@ -6,7 +6,9 @@
   <title>AUA Steel Fabrication Attendance</title>
 
   <style>
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
@@ -44,7 +46,8 @@
       font-weight: bold;
     }
 
-    select, button {
+    select,
+    button {
       width: 100%;
       min-height: 54px;
       padding: 14px;
@@ -71,20 +74,34 @@
       cursor: not-allowed;
     }
 
-    .time-in { background: #16823f; }
-    .time-out { background: #2450df; }
-    .camera-button, .capture-button { background: #374151; }
+    .time-in {
+      background: #16823f;
+    }
+
+    .time-out {
+      background: #2450df;
+    }
+
+    .camera-button,
+    .capture-button {
+      background: #374151;
+    }
 
     .retake-button {
       background: #eeeeee;
       color: #111111;
     }
 
-    .submit-button { background: #0f766e; }
+    .submit-button {
+      background: #0f766e;
+    }
 
-    .camera-section { margin-top: 18px; }
+    .camera-section {
+      margin-top: 18px;
+    }
 
-    video, canvas {
+    video,
+    canvas {
       display: block;
       width: 100%;
       height: 220px;
@@ -94,7 +111,9 @@
       object-fit: cover;
     }
 
-    canvas { display: none; }
+    canvas {
+      display: none;
+    }
 
     .status {
       margin-top: 10px;
@@ -105,45 +124,60 @@
       overflow-wrap: anywhere;
     }
 
-    .error { color: #b42318; }
-    .success { color: #16823f; }
+    .error {
+      color: #b42318;
+    }
+
+    .success {
+      color: #16823f;
+    }
   </style>
 </head>
 
 <body>
   <div class="container">
     <h1>AUA STEEL FABRICATION</h1>
-    <div class="subtitle">Management Department Attendance</div>
+
+    <div class="subtitle">
+      Management Department Attendance
+    </div>
 
     <label for="employee">Employee Name</label>
 
-    <label for="employee">Employee Name</label>
-
-<select id="employee">
-  <option value="">Select Employee</option>
-  <option value="Arvin Jay Avila">Arvin Jay Avila</option>
-  <option value="Marlouie Espiritu">Marlouie Espiritu</option>
-  <option value="Neil Kerby Santos">Neil Kerby Santos</option>
-  <option value="Luiz Paolo Tenero">Luiz Paolo Tenero</option>
-  <option value="Angelica Avila">Angelica Avila</option>
-  <option value="Pinky Crabajales">Pinky Crabajales</option>
-</select>
+    <select id="employee">
+      <option value="">Select Employee</option>
+      <option value="Arvin Jay Avila">Arvin Jay Avila</option>
+      <option value="Marlouie Espiritu">Marlouie Espiritu</option>
+      <option value="Neil Kerby Santos">Neil Kerby Santos</option>
+      <option value="Luiz Paolo Tenero">Luiz Paolo Tenero</option>
+      <option value="Angelica Avila">Angelica Avila</option>
+      <option value="Pinky Crabajales">Pinky Crabajales</option>
     </select>
 
-    <button class="time-in" onclick="selectAttendance('Time-In')">
+    <button
+      class="time-in"
+      onclick="selectAttendance('Time-In')"
+    >
       TIME-IN
     </button>
 
-    <button class="time-out" onclick="selectAttendance('Time-Out')">
+    <button
+      class="time-out"
+      onclick="selectAttendance('Time-Out')"
+    >
       TIME-OUT
     </button>
 
     <div class="camera-section">
-      <button class="camera-button" onclick="startCamera()">
+      <button
+        class="camera-button"
+        onclick="startCamera()"
+      >
         OPEN CAMERA
       </button>
 
       <video id="video" autoplay playsinline muted></video>
+
       <canvas id="canvas"></canvas>
 
       <button
@@ -221,9 +255,17 @@
       showStatus("Requesting camera access...");
 
       try {
-        if (!navigator.mediaDevices ||
-            !navigator.mediaDevices.getUserMedia) {
-          throw new Error("Camera access requires a secure HTTPS page.");
+        if (
+          !navigator.mediaDevices ||
+          !navigator.mediaDevices.getUserMedia
+        ) {
+          throw new Error(
+            "Camera access requires a secure HTTPS page."
+          );
+        }
+
+        if (cameraStream) {
+          cameraStream.getTracks().forEach(track => track.stop());
         }
 
         cameraStream = await navigator.mediaDevices.getUserMedia({
@@ -237,7 +279,10 @@
         captureButton.disabled = false;
         retakeButton.disabled = true;
 
-        showStatus("Camera opened. You can capture your photo.", "success");
+        showStatus(
+          "Camera opened. You can capture your photo.",
+          "success"
+        );
 
       } catch (error) {
         showStatus(
@@ -254,15 +299,25 @@
       }
 
       if (!video.videoWidth || !video.videoHeight) {
-        showStatus("Camera is still starting. Please wait.", "error");
+        showStatus(
+          "Camera is still starting. Please wait.",
+          "error"
+        );
         return;
       }
 
       const context = canvas.getContext("2d");
+
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
 
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      context.drawImage(
+        video,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
 
       photoCaptured = true;
 
@@ -272,7 +327,10 @@
       captureButton.disabled = true;
       retakeButton.disabled = false;
 
-      showStatus("Photo captured. You can retake it if needed.", "success");
+      showStatus(
+        "Photo captured. You can retake it if needed.",
+        "success"
+      );
 
       updateSubmitButton();
     }
@@ -293,7 +351,9 @@
 
       updateSubmitButton();
 
-      showStatus("Camera is ready. Capture your photo again.");
+      showStatus(
+        "Camera is ready. Capture your photo again."
+      );
     }
 
     function updateSubmitButton() {
@@ -309,7 +369,11 @@
     async function submitAttendance() {
       const employee = document.getElementById("employee").value;
 
-      if (!employee || !selectedAttendanceType || !photoCaptured) {
+      if (
+        !employee ||
+        !selectedAttendanceType ||
+        !photoCaptured
+      ) {
         showStatus(
           "Please select an employee, attendance type, and capture a photo.",
           "error"
@@ -318,11 +382,13 @@
       }
 
       submitButton.disabled = true;
+
       showStatus("Submitting attendance. Please wait...");
 
       const photo = canvas.toDataURL("image/jpeg", 0.7);
 
       const form = document.createElement("form");
+
       form.method = "POST";
       form.action = SCRIPT_URL;
       form.target = "_blank";
@@ -335,13 +401,16 @@
 
       Object.keys(fields).forEach(function(key) {
         const input = document.createElement("input");
+
         input.type = "hidden";
         input.name = key;
         input.value = fields[key];
+
         form.appendChild(input);
       });
 
       document.body.appendChild(form);
+
       form.submit();
       form.remove();
 
@@ -369,9 +438,16 @@
       submitButton.disabled = true;
     }
 
-    document.getElementById("employee").addEventListener("change", function() {
-      updateSubmitButton();
-    });
+    document
+      .getElementById("employee")
+      .addEventListener("change", function() {
+        selectedAttendanceType = "";
+        updateSubmitButton();
+
+        showStatus(
+          "Select TIME-IN or TIME-OUT, then open the camera."
+        );
+      });
 
     window.addEventListener("beforeunload", function() {
       if (cameraStream) {
