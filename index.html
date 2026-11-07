@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,9 +7,7 @@
   <title>AUA Steel Fabrication Attendance</title>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -46,8 +45,7 @@
       font-weight: bold;
     }
 
-    select,
-    button {
+    select, button {
       width: 100%;
       min-height: 54px;
       padding: 14px;
@@ -74,30 +72,20 @@
       cursor: not-allowed;
     }
 
-    .time-in {
-      background: #16823f;
-    }
-
-    .time-out {
-      background: #2450df;
-    }
-
-    .camera-button,
-    .capture-button {
-      background: #374151;
-    }
+    .time-in { background: #16823f; }
+    .time-out { background: #2450df; }
+    .camera-button, .capture-button { background: #374151; }
 
     .retake-button {
       background: #eeeeee;
       color: #111111;
     }
 
-    .camera-section {
-      margin-top: 18px;
-    }
+    .submit-button { background: #0f766e; }
 
-    video,
-    canvas {
+    .camera-section { margin-top: 18px; }
+
+    video, canvas {
       display: block;
       width: 100%;
       height: 220px;
@@ -107,9 +95,7 @@
       object-fit: cover;
     }
 
-    canvas {
-      display: none;
-    }
+    canvas { display: none; }
 
     .status {
       margin-top: 10px;
@@ -120,13 +106,8 @@
       overflow-wrap: anywhere;
     }
 
-    .error {
-      color: #b42318;
-    }
-
-    .success {
-      color: #16823f;
-    }
+    .error { color: #b42318; }
+    .success { color: #16823f; }
   </style>
 </head>
 
@@ -159,7 +140,6 @@
       </button>
 
       <video id="video" autoplay playsinline muted></video>
-
       <canvas id="canvas"></canvas>
 
       <button
@@ -179,14 +159,26 @@
       >
         RETAKE PHOTO
       </button>
+
+      <button
+        class="submit-button"
+        id="submitButton"
+        onclick="submitAttendance()"
+        disabled
+      >
+        SUBMIT ATTENDANCE
+      </button>
     </div>
 
     <p id="status" class="status">
-      Please select your attendance type and capture a photo.
+      Select your attendance type and capture a photo.
     </p>
   </div>
 
   <script>
+    const SCRIPT_URL =
+      "https://script.google.com/macros/s/AKfycbzM4GnVgaNLEhCoDNLPL_6KhVaVQyisbh1i_cdGE2p1Nfa4aQD--WdD9nTIcAgat8c8UQ/exec";
+
     let cameraStream = null;
     let selectedAttendanceType = "";
     let photoCaptured = false;
@@ -196,6 +188,7 @@
     const statusMessage = document.getElementById("status");
     const captureButton = document.getElementById("captureButton");
     const retakeButton = document.getElementById("retakeButton");
+    const submitButton = document.getElementById("submitButton");
 
     function showStatus(message, type = "") {
       statusMessage.innerText = message;
@@ -214,21 +207,19 @@
 
       showStatus(
         employee + " selected for " + type +
-        ". Please open the camera and capture a photo."
+        ". Open the camera and capture a photo."
       );
+
+      updateSubmitButton();
     }
 
     async function startCamera() {
       showStatus("Requesting camera access...");
 
       try {
-        if (
-          !navigator.mediaDevices ||
-          !navigator.mediaDevices.getUserMedia
-        ) {
-          throw new Error(
-            "Camera access is unavailable. Please use a secure HTTPS page."
-          );
+        if (!navigator.mediaDevices ||
+            !navigator.mediaDevices.getUserMedia) {
+          throw new Error("Camera access requires a secure HTTPS page.");
         }
 
         cameraStream = await navigator.mediaDevices.getUserMedia({
@@ -237,24 +228,18 @@
         });
 
         video.srcObject = cameraStream;
-
         await video.play();
 
         captureButton.disabled = false;
         retakeButton.disabled = true;
 
-        showStatus(
-          "Camera opened successfully. You can capture your photo.",
-          "success"
-        );
+        showStatus("Camera opened. You can capture your photo.", "success");
 
       } catch (error) {
         showStatus(
           "Camera error: " + error.name + " - " + error.message,
           "error"
         );
-
-        console.error("Camera error:", error);
       }
     }
 
@@ -265,25 +250,15 @@
       }
 
       if (!video.videoWidth || !video.videoHeight) {
-        showStatus(
-          "The camera is still starting. Please wait and try again.",
-          "error"
-        );
+        showStatus("Camera is still starting. Please wait.", "error");
         return;
       }
 
       const context = canvas.getContext("2d");
-
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
 
-      context.drawImage(
-        video,
-        0,
-        0,
-        canvas.width,
-        canvas.height
-      );
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
       photoCaptured = true;
 
@@ -293,10 +268,9 @@
       captureButton.disabled = true;
       retakeButton.disabled = false;
 
-      showStatus(
-        "Photo captured. You can retake it if needed.",
-        "success"
-      );
+      showStatus("Photo captured. You can retake it if needed.", "success");
+
+      updateSubmitButton();
     }
 
     function retakePhoto() {
@@ -313,8 +287,87 @@
       captureButton.disabled = false;
       retakeButton.disabled = true;
 
+      updateSubmitButton();
+
       showStatus("Camera is ready. Capture your photo again.");
     }
+
+    function updateSubmitButton() {
+      const employee = document.getElementById("employee").value;
+
+      submitButton.disabled = !(
+        employee &&
+        selectedAttendanceType &&
+        photoCaptured
+      );
+    }
+
+    async function submitAttendance() {
+      const employee = document.getElementById("employee").value;
+
+      if (!employee || !selectedAttendanceType || !photoCaptured) {
+        showStatus(
+          "Please select an employee, attendance type, and capture a photo.",
+          "error"
+        );
+        return;
+      }
+
+      submitButton.disabled = true;
+      showStatus("Submitting attendance. Please wait...");
+
+      const photo = canvas.toDataURL("image/jpeg", 0.7);
+
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = SCRIPT_URL;
+      form.target = "_blank";
+
+      const fields = {
+        employeeName: employee,
+        attendanceType: selectedAttendanceType,
+        photo: photo
+      };
+
+      Object.keys(fields).forEach(function(key) {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = key;
+        input.value = fields[key];
+        form.appendChild(input);
+      });
+
+      document.body.appendChild(form);
+      form.submit();
+      form.remove();
+
+      showStatus(
+        "Attendance submission sent. Check the new tab for the result.",
+        "success"
+      );
+
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(function(track) {
+          track.stop();
+        });
+      }
+
+      cameraStream = null;
+      photoCaptured = false;
+      selectedAttendanceType = "";
+
+      video.srcObject = null;
+      video.style.display = "block";
+      canvas.style.display = "none";
+
+      captureButton.disabled = true;
+      retakeButton.disabled = true;
+      submitButton.disabled = true;
+    }
+
+    document.getElementById("employee").addEventListener("change", function() {
+      updateSubmitButton();
+    });
 
     window.addEventListener("beforeunload", function() {
       if (cameraStream) {
